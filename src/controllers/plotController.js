@@ -15,7 +15,8 @@ export const getAllPlots = async (req, res) => {
 
     const plots = await Plot.find(filter)
       .populate("purchaserId", "name cnicNumber phoneNumber")
-      .populate("serviceProviderId", "name");
+      .populate("serviceProviderId", "name")
+      .populate("plotDetails");
 
     res.json({ success: true, count: plots.length, data: plots });
   } catch (error) {

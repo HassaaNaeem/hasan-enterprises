@@ -30,25 +30,32 @@ export const uploadDocument = async (req, res) => {
       ? new mongoose.Types.ObjectId(plotId)
       : plotId;
 
-    // Find the milestone document
-    const milestoneDoc = await MilestoneDocument.findOne({
+    // Find the milestone document or create it
+    let milestoneDoc = await MilestoneDocument.findOne({
       plotId: plotObjectId,
       percentage: milestone,
       documentType
     });
 
     if (!milestoneDoc) {
-      return res.status(404).json({
-        success: false,
-        message: 'Milestone document not found'
+      // Create new if not found (manual upload case)
+      milestoneDoc = new MilestoneDocument({
+        plotId: plotObjectId,
+        percentage: milestone,
+        documentType,
+        status: 'approved',
+        generatedUri: uri,
+        generatedAt: new Date(),
+        approvedAt: new Date(),
       });
+    } else {
+      // Update existing
+      milestoneDoc.generatedUri = uri;
+      milestoneDoc.status = 'approved';
+      milestoneDoc.generatedAt = new Date();
+      milestoneDoc.approvedAt = new Date();
+      milestoneDoc.updatedAt = new Date();
     }
-
-    // Update with file URI and change status to 'generated'
-    milestoneDoc.generatedUri = uri;
-    milestoneDoc.status = 'generated'; // Changed from 'ready' to 'generated'
-    milestoneDoc.generatedAt = new Date();
-    milestoneDoc.updatedAt = new Date();
 
     await milestoneDoc.save();
 
