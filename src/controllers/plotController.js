@@ -55,6 +55,11 @@ export const createPlot = async (req, res) => {
         .json({ success: false, message: "Plot number already exists" });
     }
 
+    let imageUri = null;
+    if (req.files && req.files.plotImage) {
+      imageUri = `uploads/plots/${req.files.plotImage[0].filename}`;
+    }
+
     const plot = await Plot.create({
       plotNumber,
       area,
@@ -64,6 +69,7 @@ export const createPlot = async (req, res) => {
       status: "available",
       documentId: uuidv4(),
       dateOfPreparation: new Date(),
+      imageUri,
     });
 
     res.status(201).json({ success: true, data: plot });

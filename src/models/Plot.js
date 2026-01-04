@@ -44,6 +44,9 @@ const plotSchema = new mongoose.Schema({
   serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider'
+  },
+  imageUri: {
+    type: String
   }
 }, {
   timestamps: true,

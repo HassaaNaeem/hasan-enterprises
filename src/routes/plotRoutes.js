@@ -18,7 +18,7 @@ router.get("/", protect, getAllPlots);
 router.get("/my-plots", protect, authorize("purchaser"), getMyPlots);
 router.get("/:id", protect, getPlotById);
 
-router.post("/", protect, authorize("service_provider", "admin"), createPlot);
+router.post("/", protect, authorize("service_provider", "admin"), uploadFields, createPlot);
 router.post("/:plotId/apply", protect, authorize("purchaser"), applyForPlot);
 router.post(
   "/:plotId/documents",

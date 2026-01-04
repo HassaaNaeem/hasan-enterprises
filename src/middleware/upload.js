@@ -30,6 +30,9 @@ const storage = multer.diskStorage({
       case "document":
         uploadPath = "uploads/documents/";
         break;
+      case "plotImage":
+        uploadPath = "uploads/plots/";
+        break;
       default:
         uploadPath = "uploads/";
     }
@@ -85,4 +88,5 @@ export const uploadFields = upload.fields([
   { name: "image", maxCount: 1 },
   { name: "paymentProof", maxCount: 1 },
   { name: "document", maxCount: 1 },
+  { name: "plotImage", maxCount: 1 },
 ]);

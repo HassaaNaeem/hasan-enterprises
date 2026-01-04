@@ -20,6 +20,11 @@ export const register = async (req, res) => {
     let purchaserId = null;
     let serviceProviderId = null;
     let token;
+    let imageUri = null;
+
+    if (req.files && req.files.image) {
+      imageUri = `uploads/image/${req.files.image[0].filename}`;
+    }
 
     if (role === "purchaser" || !role) {
       const purchase = await Purchase.create({
@@ -28,6 +33,7 @@ export const register = async (req, res) => {
         phoneNumber,
         fatherName,
         balance: 0,
+        imageUri,
       });
       purchaserId = purchase._id;
       token = generateToken(purchase._id);
@@ -46,6 +52,7 @@ export const register = async (req, res) => {
         cnicNumber,
         phoneNumber,
         balance: 0,
+        imageUri,
       });
       serviceProviderId = serviceProvider._id;
       token = generateToken(serviceProvider._id);
