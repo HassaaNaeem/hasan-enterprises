@@ -19,22 +19,18 @@ export const createPaymentSchedule = async (req, res) => {
     }
 
     if (plot.status !== "reserved") {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Plot must be reserved before creating payment schedule",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Plot must be reserved before creating payment schedule",
+      });
     }
 
     const existingSchedules = await PaymentSchedule.find({ plotId });
     if (existingSchedules.length > 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Payment schedule already exists for this plot",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Payment schedule already exists for this plot",
+      });
     }
 
     const createdSchedules = [];
@@ -63,6 +59,7 @@ export const createPaymentSchedule = async (req, res) => {
       success: true,
       message: "Payment schedule created successfully",
       data: createdSchedules,
+      installments,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -123,12 +120,10 @@ export const makePayment = async (req, res) => {
 
     const plot = await Plot.findById(schedule.plotId);
     if (plot.purchaserId?.toString() !== req.user.purchaserId?.toString()) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to make payment for this plot",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to make payment for this plot",
+      });
     }
 
     const currentPaid = parseFloat(installment.amountPaid?.toString() || "0");
@@ -194,12 +189,10 @@ export const getMyPayments = async (req, res) => {
     const purchaserId = req.user.purchaserId;
 
     if (!purchaserId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Only purchasers can view their payments",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Only purchasers can view their payments",
+      });
     }
 
     const plots = await Plot.find({ purchaserId });
