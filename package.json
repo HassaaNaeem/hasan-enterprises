@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "cd src && node server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "vercel-start": "cd src && node server.js"
   },
   "keywords": [
     "plot-management",

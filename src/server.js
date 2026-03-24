@@ -19,7 +19,13 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-connectDB();
+let isConnected = false;
+app.use((req, res, next) => {
+  if (!isConnected) {
+    connectDB();
+  }
+  next();
+});
 
 app.use(
   cors({
@@ -93,11 +99,11 @@ const initializePlace = async () => {
   }
 };
 
-const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, "0.0.0.0", async () => {
-  console.log(`Server running on port ${PORT}`);
-  await initializePlace();
-});
+// app.listen(PORT, "0.0.0.0", async () => {
+//   console.log(`Server running on port ${PORT}`);
+//   await initializePlace();
+// });
 
 export default app;
