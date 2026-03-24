@@ -6,6 +6,7 @@ import {
   getPaymentProgress,
   getMyPayments,
   checkOverduePayments,
+  milestoneReached,
 } from "../controllers/paymentController.js";
 import { protect, authorize } from "../middleware/auth.js";
 import { uploadFields } from "../middleware/upload.js";
@@ -17,6 +18,12 @@ router.post(
   protect,
   authorize("service_provider", "admin"),
   createPaymentSchedule
+);
+router.post(
+  "/milestone-reached",
+  protect,
+  authorize("purchaser", "service_provider", "admin"),
+  milestoneReached
 );
 router.get("/schedule/:plotId", protect, getPaymentSchedule);
 router.get("/progress/:plotId", protect, getPaymentProgress);

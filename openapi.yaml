@@ -1,0 +1,1655 @@
+openapi: 3.0.3
+info:
+  title: Hasan Enterprises Plot Management API
+  version: 1.0.0
+  description: Authoritative API contract for frontend integration
+  contact:
+    name: Hasan Enterprises
+    url: http://hasan-enterprises.local
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+  - url: http://localhost:3002/api
+    description: Alternative local development server
+  - url: https://api.hasan-enterprises.com/api
+    description: Production server (placeholder)
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Plots
+    description: Plot management
+  - name: Payments
+    description: Payment schedules and installments
+  - name: Cases
+    description: Legal cases and failed payments
+  - name: Documents
+    description: Document upload and retrieval for milestones
+  - name: Dashboard
+    description: Dashboard data by role
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token in Authorization header
+
+  schemas:
+    User:
+      type: object
+      required:
+        - _id
+        - email
+        - role
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [purchaser, service_provider, admin, legal]
+        purchaserId:
+          type: string
+          nullable: true
+          description: Reference to Purchase document
+        serviceProviderId:
+          type: string
+          nullable: true
+          description: Reference to ServiceProvider document
+        isActive:
+          type: boolean
+          default: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Purchase:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        cnicNumber:
+          type: string
+        phoneNumber:
+          type: string
+        fatherName:
+          type: string
+        balance:
+          type: number
+        imageUri:
+          type: string
+          nullable: true
+
+    ServiceProvider:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        cnicNumber:
+          type: string
+        phoneNumber:
+          type: string
+        balance:
+          type: number
+        imageUri:
+          type: string
+          nullable: true
+
+    Plot:
+      type: object
+      required:
+        - plotNumber
+        - status
+      properties:
+        _id:
+          type: string
+        plotNumber:
+          type: string
+          description: Unique plot identifier
+        area:
+          type: string
+        location:
+          type: string
+        documentType:
+          type: string
+        totalValue:
+          type: number
+          format: double
+        status:
+          type: string
+          enum: [available, reserved, sold, on_hold]
+          description: Current plot status
+        purchaserId:
+          type: string
+          nullable: true
+          description: Reference to Purchase
+        serviceProviderId:
+          type: string
+          nullable: true
+          description: Reference to ServiceProvider
+        documentId:
+          type: string
+        dateOfPreparation:
+          type: string
+          format: date-time
+        dateOfSale:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PlotDetails:
+      type: object
+      properties:
+        _id:
+          type: string
+        plotId:
+          type: string
+          description: Reference to Plot
+        plotNumber:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [pending, uploaded, verified, rejected]
+        documentId:
+          type: string
+        plotMapUri:
+          type: string
+          nullable: true
+        purchaserCnicCopyUri:
+          type: string
+          nullable: true
+        purchaserBankStatementUri:
+          type: string
+          nullable: true
+        companyFormUri:
+          type: string
+          nullable: true
+        allotmentDocUri:
+          type: string
+          nullable: true
+        allocationDocUri:
+          type: string
+          nullable: true
+        possessionDocUri:
+          type: string
+          nullable: true
+        clearanceDocUri:
+          type: string
+          nullable: true
+        allotmentStatus:
+          type: string
+          enum: [pending, approved]
+        allocationStatus:
+          type: string
+          enum: [pending, approved]
+        possessionStatus:
+          type: string
+          enum: [pending, approved]
+        clearanceStatus:
+          type: string
+          enum: [pending, approved]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaymentSchedule:
+      type: object
+      required:
+        - plotId
+        - amount
+        - installmentNumber
+      properties:
+        _id:
+          type: string
+        plotId:
+          type: string
+          description: Reference to Plot
+        amount:
+          type: number
+          format: double
+        dueDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, paid, overdue, partial, failed]
+        installmentNumber:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaymentInstallment:
+      type: object
+      required:
+        - paymentScheduleId
+        - amount
+      properties:
+        _id:
+          type: string
+        paymentScheduleId:
+          type: string
+          description: Reference to PaymentSchedule
+        amount:
+          type: number
+          format: double
+        dueDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, paid, overdue, partial, failed]
+        amountPaid:
+          type: number
+          format: double
+          default: 0
+        balance:
+          type: number
+          format: double
+          default: 0
+        dateOfPayment:
+          type: string
+          format: date-time
+          nullable: true
+        receiptUri:
+          type: string
+          nullable: true
+        proofUri:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FailedPayment:
+      type: object
+      required:
+        - plotId
+        - amount
+      properties:
+        _id:
+          type: string
+        plotId:
+          type: string
+          description: Reference to Plot
+        amount:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [recorded, filed, in_progress, resolved, closed]
+        caseId:
+          type: string
+          nullable: true
+          description: Generated case ID when filed
+        courtDate:
+          type: string
+          format: date-time
+          nullable: true
+        chargeCode:
+          type: string
+          nullable: true
+        amountCharged:
+          type: number
+          format: double
+          nullable: true
+        description:
+          type: string
+        gracePeriodEnd:
+          type: string
+          format: date-time
+        filedBy:
+          type: string
+          description: Reference to ServiceProvider
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MilestoneDocument:
+      type: object
+      required:
+        - plotId
+        - percentage
+        - documentType
+      properties:
+        _id:
+          type: string
+        plotId:
+          type: string
+        percentage:
+          type: number
+        documentType:
+          type: string
+          enum: [ALLOTMENT, ALLOCATION, POSSESSION, CLEARANCE]
+        status:
+          type: string
+          enum: [ready, generated, approved]
+        generatedUri:
+          type: string
+          nullable: true
+        generatedAt:
+          type: string
+          format: date-time
+        approvedAt:
+          type: string
+          format: date-time
+        approvedBy:
+          type: string
+        approvalNotes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error:
+          type: string
+          nullable: true
+
+    SuccessResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        token:
+          type: string
+          nullable: true
+          description: JWT token returned on login
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized - missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user (purchaser or service_provider)
+      description: Creates a new user account with associated profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                role:
+                  type: string
+                  enum: [purchaser, service_provider]
+                  default: purchaser
+                name:
+                  type: string
+                cnicNumber:
+                  type: string
+                phoneNumber:
+                  type: string
+                fatherName:
+                  type: string
+                  description: Required for purchaser
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: User already exists or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      description: Authenticates user and returns JWT token (also set as httpOnly cookie)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: token=jwt_token_here; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    description: JWT token for Authorization header
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout user
+      description: Clears authentication cookie
+      responses:
+        '200':
+          description: Logout successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: token=; Expires=Thu, 01 Jan 1970 00:00:00 UTC
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      description: Returns authenticated user details with populated purchaser/serviceProvider data
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh JWT token
+      description: Issues a new token; protected route (requires valid token)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /plots:
+    get:
+      tags: [Plots]
+      summary: List all plots
+      description: Returns plots filtered by status, location, or area. Protected route.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [available, reserved, sold, on_hold]
+          description: Filter by plot status
+        - in: query
+          name: location
+          schema:
+            type: string
+          description: Filter by location (partial match)
+        - in: query
+          name: area
+          schema:
+            type: string
+          description: Filter by area (partial match)
+      responses:
+        '200':
+          description: List of plots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Plot'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Plots]
+      summary: Create new plot
+      description: Create new plot. Only service_provider or admin can create.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plotNumber, area, location, totalValue]
+              properties:
+                plotNumber:
+                  type: string
+                area:
+                  type: string
+                location:
+                  type: string
+                totalValue:
+                  type: number
+                documentType:
+                  type: string
+      responses:
+        '201':
+          description: Plot created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Plot'
+        '403':
+          description: Forbidden - insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /plots/my-plots:
+    get:
+      tags: [Plots]
+      summary: Get purchaser's plots
+      description: Returns plots owned by the authenticated purchaser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Purchaser's plots with details and payment progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        plot:
+                          $ref: '#/components/schemas/Plot'
+                        details:
+                          $ref: '#/components/schemas/PlotDetails'
+        '403':
+          description: Only purchasers can access this endpoint
+
+  /plots/{id}:
+    get:
+      tags: [Plots]
+      summary: Get plot by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Plot MongoDB ObjectId
+      responses:
+        '200':
+          description: Plot with details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      plot:
+                        $ref: '#/components/schemas/Plot'
+                      plotDetails:
+                        $ref: '#/components/schemas/PlotDetails'
+        '404':
+          description: Plot not found
+
+    put:
+      tags: [Plots]
+      summary: Update plot
+      description: Update plot details. Only service_provider or admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Plot updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Plot'
+
+  /plots/{plotId}/apply:
+    post:
+      tags: [Plots]
+      summary: Apply for plot (purchaser)
+      description: Purchaser submits application for an available plot
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      plot:
+                        $ref: '#/components/schemas/Plot'
+                      plotDetails:
+                        $ref: '#/components/schemas/PlotDetails'
+                      requiredDocuments:
+                        type: array
+                        items:
+                          type: string
+
+  /plots/{plotId}/documents:
+    post:
+      tags: [Plots]
+      summary: Upload plot documents
+      description: Upload required documents (multipart/form-data). Purchaser only.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                plotMap:
+                  type: string
+                  format: binary
+                cnicCopy:
+                  type: string
+                  format: binary
+                bankStatement:
+                  type: string
+                  format: binary
+                companyForm:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Documents uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/PlotDetails'
+        '403':
+          description: Not authorized for this plot
+
+  /plots/{plotId}/verify:
+    put:
+      tags: [Plots]
+      summary: Verify plot documents
+      description: Verify uploaded documents. Service provider or admin only.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [verified, rejected]
+                serviceProviderId:
+                  type: string
+      responses:
+        '200':
+          description: Documents verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/PlotDetails'
+
+  /payments/schedule:
+    post:
+      tags: [Payments]
+      summary: Create payment schedule
+      description: Create payment installments for a plot. Service provider or admin.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plotId:
+                  type: string
+                installments:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      installmentNumber:
+                        type: integer
+                      amount:
+                        type: number
+                      dueDate:
+                        type: string
+                        format: date-time
+      responses:
+        '201':
+          description: Payment schedule created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        schedule:
+                          $ref: '#/components/schemas/PaymentSchedule'
+                        installment:
+                          $ref: '#/components/schemas/PaymentInstallment'
+
+  /payments/schedule/{plotId}:
+    get:
+      tags: [Payments]
+      summary: Get payment schedule
+      description: Retrieve payment schedule and installments for a plot
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment schedule
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      schedules:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            schedule:
+                              $ref: '#/components/schemas/PaymentSchedule'
+                            installments:
+                              type: array
+                              items:
+                                $ref: '#/components/schemas/PaymentInstallment'
+                      progress:
+                        type: object
+                        description: Payment progress metrics
+
+  /payments/progress/{plotId}:
+    get:
+      tags: [Payments]
+      summary: Get payment progress
+      description: Calculate and return payment progress for a plot
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+
+  /payments/my-payments:
+    get:
+      tags: [Payments]
+      summary: Get purchaser's payments
+      description: Retrieve all payment schedules and installments for purchaser's plots
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Purchaser's payment schedules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        schedule:
+                          $ref: '#/components/schemas/PaymentSchedule'
+                        installments:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/PaymentInstallment'
+
+  /payments/{installmentId}/pay:
+    post:
+      tags: [Payments]
+      summary: Make a payment
+      description: Record payment for an installment. Purchaser only.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: installmentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                amountPaid:
+                  type: number
+                paymentProof:
+                  type: string
+                  format: binary
+                proofUri:
+                  type: string
+      responses:
+        '200':
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      installment:
+                        $ref: '#/components/schemas/PaymentInstallment'
+                      schedule:
+                        $ref: '#/components/schemas/PaymentSchedule'
+                      receiptUri:
+                        type: string
+                      milestone:
+                        type: object
+                        nullable: true
+
+  /payments/check-overdue:
+    post:
+      tags: [Payments]
+      summary: Check and mark overdue payments
+      description: Find and update overdue payment statuses. Service provider or admin.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Overdue payments checked and updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentInstallment'
+
+  /payments/milestone-reached:
+    post:
+      tags: [Payments]
+      summary: Signal milestone reached
+      description: Frontend notifies backend that a payment milestone has been reached
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plotId:
+                  type: string
+                percentage:
+                  type: number
+                amountPaid:
+                  type: number
+                documentType:
+                  type: string
+      responses:
+        '200':
+          description: Milestone notification recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      milestone:
+                        type: number
+                      documentType:
+                        type: string
+                      generationStatus:
+                        type: string
+
+  /cases:
+    get:
+      tags: [Cases]
+      summary: List cases
+      description: List failed payment cases. Service provider, admin, or legal.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [recorded, filed, in_progress, resolved, closed]
+        - in: query
+          name: plotId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of cases
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FailedPayment'
+
+  /cases/failed-payment:
+    post:
+      tags: [Cases]
+      summary: Record failed payment
+      description: Record a failed payment as a case. Service provider only.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plotId:
+                  type: string
+                amount:
+                  type: number
+                description:
+                  type: string
+                gracePeriodDays:
+                  type: integer
+                  default: 30
+      responses:
+        '201':
+          description: Failed payment recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/FailedPayment'
+
+  /cases/grace-period-expired:
+    get:
+      tags: [Cases]
+      summary: Get expired grace period cases
+      description: Returns failed payments with expired grace period ready to file
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cases with expired grace period
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FailedPayment'
+
+  /cases/{id}:
+    get:
+      tags: [Cases]
+      summary: Get case by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/FailedPayment'
+
+  /cases/{failedPaymentId}/file:
+    post:
+      tags: [Cases]
+      summary: File a case
+      description: File a legal case for a failed payment. Service provider only.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: failedPaymentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                courtDate:
+                  type: string
+                  format: date-time
+                chargeCode:
+                  type: string
+                amountCharged:
+                  type: number
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Case filed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      failedPayment:
+                        $ref: '#/components/schemas/FailedPayment'
+                      plot:
+                        $ref: '#/components/schemas/Plot'
+
+  /cases/{id}/status:
+    put:
+      tags: [Cases]
+      summary: Update case status
+      description: Update status of a legal case. Service provider, admin, or legal.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [recorded, filed, in_progress, resolved, closed]
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Case status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/FailedPayment'
+
+  /dashboard/purchaser:
+    get:
+      tags: [Dashboard]
+      summary: Purchaser dashboard
+      description: Dashboard metrics for purchaser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      purchaser:
+                        $ref: '#/components/schemas/Purchase'
+                      plotsCount:
+                        type: integer
+                      totalPendingPayments:
+                        type: integer
+                      plots:
+                        type: array
+                        items:
+                          type: object
+
+  /dashboard/service-provider:
+    get:
+      tags: [Dashboard]
+      summary: Service provider dashboard
+      description: Dashboard metrics for service provider
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+
+  /documents/{plotId}/upload:
+    post:
+      tags: [Documents]
+      summary: Upload milestone document
+      description: Service provider uploads a PDF document for a milestone (Allotment, Allocation, Possession, Clearance)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                document:
+                  type: string
+                  format: binary
+                  description: PDF file
+                documentType:
+                  type: string
+                  enum: [ALLOTMENT, ALLOCATION, POSSESSION, CLEARANCE]
+                milestone:
+                  type: number
+                  description: Milestone percentage (10, 50, 75, 100)
+      responses:
+        '200':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      documentId:
+                        type: string
+                      documentUri:
+                        type: string
+                      documentType:
+                        type: string
+                      status:
+                        type: string
+                      plotId:
+                        type: string
+        '403':
+          description: Not authorized
+
+  /documents/{plotId}:
+    get:
+      tags: [Documents]
+      summary: View plot documents
+      description: Get all documents (Allotment, Allocation, Possession, Clearance) for a plot. Purchaser or service provider can view.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plot documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      plot:
+                        type: object
+                      documents:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            documentType:
+                              type: string
+                            percentage:
+                              type: number
+                            status:
+                              type: string
+                      plotDetails:
+                        type: object
+        '403':
+          description: Not authorized
+
+  /documents/{documentId}/download:
+    get:
+      tags: [Documents]
+      summary: Download document
+      description: Get document URI and metadata for downloading. Returns download link and details.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      documentId:
+                        type: string
+                      documentType:
+                        type: string
+                      percentage:
+                        type: number
+                      uri:
+                        type: string
+                      status:
+                        type: string
+                      approvedAt:
+                        type: string
+                        format: date-time
+        '403':
+          description: Not authorized
+
+  /dashboard/admin:
+    get:
+      tags: [Dashboard]
+      summary: Admin dashboard
+      description: System-wide dashboard metrics. Admin or legal role only.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      overview:
+                        type: object
+                      recentPlots:
+                        type: array
+                      recentCases:
+                        type: array
+
+  /dashboard/audit-logs:
+    get:
+      tags: [Dashboard]
+      summary: Get audit logs
+      description: Retrieve system audit logs. Admin or legal role only.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  /dashboard/reports:
+    get:
+      tags: [Dashboard]
+      summary: Get reports
+      description: Generate system reports. Admin, legal, or service provider roles.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Reports data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+security:
+  - bearerAuth: []

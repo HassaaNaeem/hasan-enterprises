@@ -44,11 +44,21 @@ const plotSchema = new mongoose.Schema({
   serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider'
+  },
+  imageUri: {
+    type: String
   }
 }, {
   timestamps: true,
-  toJSON: { getters: true },
-  toObject: { getters: true }
+  toJSON: { getters: true, virtuals: true },
+  toObject: { getters: true, virtuals: true }
+});
+
+plotSchema.virtual('plotDetails', {
+  ref: 'PlotDetails',
+  localField: '_id',
+  foreignField: 'plotId',
+  justOne: true
 });
 
 const Plot = mongoose.model('Plot', plotSchema);

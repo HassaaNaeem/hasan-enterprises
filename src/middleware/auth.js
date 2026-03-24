@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import "dotenv/config";
-console.log(process.env.SESSION_SECRET);
 
 const reqEx = {
   cookies: {

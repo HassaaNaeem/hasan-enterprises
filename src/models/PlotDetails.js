@@ -35,11 +35,31 @@ const plotDetailsSchema = new mongoose.Schema({
   allocationDocUri: {
     type: String
   },
-  possesionDocUri: {
+  possessionDocUri: {
     type: String
   },
   clearanceDocUri: {
     type: String
+  },
+  allotmentStatus: {
+    type: String,
+    enum: ['pending', 'approved'],
+    default: 'pending'
+  },
+  allocationStatus: {
+    type: String,
+    enum: ['pending', 'approved'],
+    default: 'pending'
+  },
+  possessionStatus: {
+    type: String,
+    enum: ['pending', 'approved'],
+    default: 'pending'
+  },
+  clearanceStatus: {
+    type: String,
+    enum: ['pending', 'approved'],
+    default: 'pending'
   },
   plotId: {
     type: mongoose.Schema.Types.ObjectId,

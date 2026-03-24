@@ -46,9 +46,9 @@ export const checkAndIssueMilestoneDocuments = async (plotId) => {
     milestones.push({ type: 'allocation', percentage: 50, docUri: plotDetails.allocationDocUri });
   }
 
-  if (percentage >= 75 && !plotDetails.possesionDocUri) {
-    plotDetails.possesionDocUri = `/documents/possession/${uuidv4()}.pdf`;
-    milestones.push({ type: 'possession', percentage: 75, docUri: plotDetails.possesionDocUri });
+  if (percentage >= 75 && !plotDetails.possessionDocUri) {
+    plotDetails.possessionDocUri = `/documents/possession/${uuidv4()}.pdf`;
+    milestones.push({ type: 'possession', percentage: 75, docUri: plotDetails.possessionDocUri });
   }
 
   if (percentage >= 100 && !plotDetails.clearanceDocUri) {

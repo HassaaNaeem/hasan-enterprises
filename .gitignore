@@ -11,3 +11,4 @@ uploads/
 coverage/
 dist/
 .cache/
+.local/

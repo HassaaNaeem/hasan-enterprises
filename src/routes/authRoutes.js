@@ -8,9 +8,11 @@ import {
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
+import { uploadFields } from "../middleware/upload.js";
+
 const router = express.Router();
 
-router.post("/register", register);
+router.post("/register", uploadFields, register);
 router.post("/login", login);
 router.post("/logout", logout);
 router.get("/me", protect, getMe);

@@ -3,13 +3,13 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import "dotenv/config";
+import mongoose from "mongoose";
 const port = process.env.PORT;
 console.log(port);
 
 import path from "path";
 import { fileURLToPath } from "url";
 
-import connectDB from "./config/database.js";
 import routes from "./routes/index.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import Place from "./models/Place.js";
@@ -19,13 +19,42 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-connectDB();
+let isConnected = false;
+const connectDB = async () => {
+  try {
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      throw new Error("MONGODB_URI is not defined in environment variables");
+    }
+
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+    });
+    isConnected = true;
+    console.log(`✓ MongoDB Connected:`);
+    return conn;
+  } catch (error) {
+    console.error(`✗ MongoDB Connection Error:`);
+    process.exit(1);
+  }
+};
+
+app.use((req, res, next) => {
+  if (!isConnected) {
+    connectDB();
+  }
+  next();
+});
 
 app.use(
   cors({
     origin: true,
     credentials: true,
-  })
+  }),
 );
 
 // Conditional body parser middleware - skips file upload routes
@@ -53,7 +82,8 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 // Serve static files from uploads directory
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.get("/", (req, res) => {
   res.json({
@@ -92,11 +122,11 @@ const initializePlace = async () => {
   }
 };
 
-const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, "0.0.0.0", async () => {
-  console.log(`Server running on port ${PORT}`);
-  await initializePlace();
-});
+// app.listen(PORT, "0.0.0.0", async () => {
+//   console.log(`Server running on port ${PORT}`);
+//   await initializePlace();
+// });
 
 export default app;

@@ -248,3 +248,94 @@ export const checkOverduePayments = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const milestoneReached = async (req, res) => {
+  try {
+    const { plotId, percentage, amountPaid, documentType } = req.body;
+
+    // Validate inputs
+    if (!plotId || !percentage || !documentType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: plotId, percentage, documentType'
+      });
+    }
+
+    // Validate documentType enum
+    const validDocTypes = ['ALLOTMENT', 'ALLOCATION', 'POSSESSION', 'CLEARANCE'];
+    if (!validDocTypes.includes(documentType)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid documentType. Must be one of: ${validDocTypes.join(', ')}`
+      });
+    }
+
+    // Validate percentage
+    const validPercentages = [10, 50, 75, 100];
+    if (!validPercentages.includes(percentage)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid percentage. Must be one of: ${validPercentages.join(', ')}`
+      });
+    }
+
+    const plot = await Plot.findById(plotId);
+    if (!plot) {
+      return res.status(404).json({ success: false, message: 'Plot not found' });
+    }
+
+    // Import MilestoneDocument model
+    const MilestoneDocument = (await import('../models/MilestoneDocument.js')).default;
+
+    // Check if milestone document already exists
+    const existingDoc = await MilestoneDocument.findOne({
+      plotId,
+      percentage,
+      documentType
+    });
+
+    if (existingDoc) {
+      return res.status(200).json({
+        success: true,
+        message: 'Milestone document already exists',
+        data: {
+          milestone: percentage,
+          documentType,
+          generationStatus: existingDoc.status,
+          documentId: existingDoc._id
+        }
+      });
+    }
+
+    // Create new MilestoneDocument with status 'ready'
+    const milestoneDoc = await MilestoneDocument.create({
+      plotId,
+      percentage,
+      documentType,
+      status: 'ready'  // CRITICAL: Must be 'ready' not 'pending'
+    });
+
+    // Log milestone reached event
+    console.log('Milestone reached:', { plotId, percentage, documentType, amountPaid });
+
+    // Return success response
+    return res.status(200).json({
+      success: true,
+      message: 'Milestone document created successfully',
+      data: {
+        milestone: percentage,
+        documentType,
+        generationStatus: 'ready',
+        documentId: milestoneDoc._id
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in milestoneReached:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create milestone document'
+    });
+  }
+};
+

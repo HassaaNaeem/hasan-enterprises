@@ -15,7 +15,8 @@ export const getAllPlots = async (req, res) => {
 
     const plots = await Plot.find(filter)
       .populate("purchaserId", "name cnicNumber phoneNumber")
-      .populate("serviceProviderId", "name");
+      .populate("serviceProviderId", "name")
+      .populate("plotDetails");
 
     res.json({ success: true, count: plots.length, data: plots });
   } catch (error) {
@@ -54,6 +55,11 @@ export const createPlot = async (req, res) => {
         .json({ success: false, message: "Plot number already exists" });
     }
 
+    let imageUri = null;
+    if (req.files && req.files.plotImage) {
+      imageUri = `uploads/plots/${req.files.plotImage[0].filename}`;
+    }
+
     const plot = await Plot.create({
       plotNumber,
       area,
@@ -63,6 +69,7 @@ export const createPlot = async (req, res) => {
       status: "available",
       documentId: uuidv4(),
       dateOfPreparation: new Date(),
+      imageUri,
     });
 
     res.status(201).json({ success: true, data: plot });
@@ -128,80 +135,10 @@ export const applyForPlot = async (req, res) => {
   }
 };
 
-// export const uploadPlotDocuments = async (req, res) => {
-//   try {
-//     const { plotId } = req.params;
-
-//     const plotDetails = await PlotDetails.findOne({ plotId });
-//     if (!plotDetails) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Plot details not found" });
-//     }
-
-//     const plot = await Plot.findById(plotId);
-//     if (plot.purchaserId?.toString() !== req.user.purchaserId?.toString()) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Not authorized to upload documents for this plot",
-//       });
-//     }
-
-//     console.log("Plot found:", plotId);
-//     console.log(
-//       "Files received:",
-//       req.files ? Object.keys(req.files) : "No files"
-//     );
-
-//     if (req.files) {
-//       if (req.files.plotMap) {
-//         plotDetails.plotMapUri = `uploads/${req.files.plotMap[0].filename}`;
-//       }
-//       if (req.files.cnicCopy) {
-//         plotDetails.purchaserCnicCopyUri = `uploads/${req.files.cnicCopy[0].filename}`;
-//       }
-//       if (req.files.bankStatement) {
-//         plotDetails.purchaserBankStatementUri = `uploads/${req.files.bankStatement[0].filename}`;
-//       }
-//       if (req.files.companyForm) {
-//         plotDetails.companyFormUri = `uploads/${req.files.companyForm[0].filename}`;
-//       }
-//     }
-
-//     const allDocsUploaded =
-//       plotDetails.plotMapUri &&
-//       plotDetails.purchaserCnicCopyUri &&
-//       plotDetails.purchaserBankStatementUri &&
-//       plotDetails.companyFormUri;
-
-//     if (allDocsUploaded) {
-//       plotDetails.status = "uploaded";
-//     }
-
-//     console.log("Saving plot details:", plotDetails);
-
-//     await plotDetails.save();
-//     console.log("Plot details saved successfully");
-
-//     res.json({
-//       success: true,
-//       message: `Documents ${plotDetails.status} successfully`,
-//       data: plotDetails,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
 export const uploadPlotDocuments = async (req, res) => {
   try {
     const { plotId } = req.params;
 
-    console.log("=== REQUEST DEBUG INFO ===");
-    console.log("Content-Type:", req.headers["content-type"]);
-    console.log("req.body:", req.body);
-    console.log("req.files:", req.files);
-    console.log("req.file:", req.file);
-    console.log("========================");
     const plotDetails = await PlotDetails.findOne({ plotId });
     if (!plotDetails) {
       return res
@@ -216,12 +153,6 @@ export const uploadPlotDocuments = async (req, res) => {
         message: "Not authorized to upload documents for this plot",
       });
     }
-
-    console.log("Plot found:", plotId);
-    console.log(
-      "Files received:",
-      req.files ? Object.keys(req.files) : "No files"
-    );
 
     if (req.files) {
       if (req.files.plotMap) {
@@ -269,6 +200,14 @@ export const verifyPlotDocuments = async (req, res) => {
     const { plotId } = req.params;
     const { status, serviceProviderId } = req.body;
 
+    // Validate status
+    if (!["verified", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status must be either "verified" or "rejected"',
+      });
+    }
+
     const plotDetails = await PlotDetails.findOne({ plotId });
     if (!plotDetails) {
       return res
@@ -276,7 +215,9 @@ export const verifyPlotDocuments = async (req, res) => {
         .json({ success: false, message: "Plot details not found" });
     }
 
-    plotDetails.status = status;
+    // Update PlotDetails status
+    plotDetails.status = status; // 'verified' or 'rejected'
+    plotDetails.updatedAt = new Date();
     await plotDetails.save();
 
     if (status === "verified") {
@@ -327,14 +268,14 @@ export const getMyPlots = async (req, res) => {
 
     const plots = await Plot.find({ purchaserId }).populate(
       "serviceProviderId",
-      "name phoneNumber"
+      "name phoneNumber",
     );
 
     const plotsWithDetails = await Promise.all(
       plots.map(async (plot) => {
         const details = await PlotDetails.findOne({ plotId: plot._id });
         return { plot, details };
-      })
+      }),
     );
 
     res.json({ success: true, count: plots.length, data: plotsWithDetails });
