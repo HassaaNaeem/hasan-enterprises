@@ -52,7 +52,7 @@ app.use((req, res, next) => {
 
 app.use(
   cors({
-    origin: true,
+    origin: "http://localhost:8080",
     credentials: true,
   }),
 );
@@ -80,6 +80,12 @@ app.use((req, res, next) => {
 
 app.use(cookieParser());
 app.use(morgan("dev"));
+
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: true, // required on HTTPS (Vercel)
+  sameSite: "none", // REQUIRED for cross-domain
+});
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
