@@ -3,13 +3,13 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import "dotenv/config";
+import mongoose from "mongoose";
 const port = process.env.PORT;
 console.log(port);
 
 import path from "path";
 import { fileURLToPath } from "url";
 
-import connectDB from "./config/database.js";
 import routes from "./routes/index.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import Place from "./models/Place.js";
@@ -20,6 +20,29 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 let isConnected = false;
+const connectDB = async () => {
+  try {
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      throw new Error("MONGODB_URI is not defined in environment variables");
+    }
+
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+    });
+    isConnected = true;
+    console.log(`✓ MongoDB Connected:`);
+    return conn;
+  } catch (error) {
+    console.error(`✗ MongoDB Connection Error:`);
+    process.exit(1);
+  }
+};
+
 app.use((req, res, next) => {
   if (!isConnected) {
     connectDB();
