@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "cd src && node server.js",
     "dev": "node --watch src/server.js"
   },
   "keywords": [

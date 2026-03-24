@@ -25,9 +25,8 @@ app.use(
   cors({
     origin: true,
     credentials: true,
-  })
+  }),
 );
-
 
 // Conditional body parser middleware - skips file upload routes
 app.use((req, res, next) => {
@@ -54,7 +53,7 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.get("/", (req, res) => {
