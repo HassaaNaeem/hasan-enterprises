@@ -1,8 +1,8 @@
-import MilestoneDocument from '../models/MilestoneDocument.js';
-import Plot from '../models/Plot.js';
-import PlotDetails from '../models/PlotDetails.js';
-import { v4 as uuidv4 } from 'uuid';
-import mongoose from 'mongoose';
+import MilestoneDocument from "../models/MilestoneDocument.js";
+import Plot from "../models/Plot.js";
+import PlotDetails from "../models/PlotDetails.js";
+import { v4 as uuidv4 } from "uuid";
+import mongoose from "mongoose";
 
 export const uploadDocument = async (req, res) => {
   try {
@@ -10,15 +10,27 @@ export const uploadDocument = async (req, res) => {
     const { documentType, milestone } = req.body;
 
     if (!req.files || !req.files.document) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded" });
     }
 
     const plot = await Plot.findById(plotId);
-    if (!plot) return res.status(404).json({ success: false, message: 'Plot not found' });
+    if (!plot)
+      return res
+        .status(404)
+        .json({ success: false, message: "Plot not found" });
 
     // Service provider uploading must own the plot or be admin
-    if (plot.serviceProviderId?.toString() !== req.user.serviceProviderId?.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized to upload documents for this plot' });
+    if (
+      plot.serviceProviderId?.toString() !==
+        req.user.serviceProviderId?.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to upload documents for this plot",
+      });
     }
 
     const file = req.files.document[0];
@@ -34,7 +46,7 @@ export const uploadDocument = async (req, res) => {
     let milestoneDoc = await MilestoneDocument.findOne({
       plotId: plotObjectId,
       percentage: milestone,
-      documentType
+      documentType,
     });
 
     if (!milestoneDoc) {
@@ -43,7 +55,7 @@ export const uploadDocument = async (req, res) => {
         plotId: plotObjectId,
         percentage: milestone,
         documentType,
-        status: 'approved',
+        status: "approved",
         generatedUri: uri,
         generatedAt: new Date(),
         approvedAt: new Date(),
@@ -51,7 +63,7 @@ export const uploadDocument = async (req, res) => {
     } else {
       // Update existing
       milestoneDoc.generatedUri = uri;
-      milestoneDoc.status = 'approved';
+      milestoneDoc.status = "approved";
       milestoneDoc.generatedAt = new Date();
       milestoneDoc.approvedAt = new Date();
       milestoneDoc.updatedAt = new Date();
@@ -63,33 +75,33 @@ export const uploadDocument = async (req, res) => {
     const plotDetails = await PlotDetails.findOne({ plotId: plotObjectId });
     if (plotDetails) {
       const keyMap = {
-        ALLOTMENT: 'allotmentDocUri',
-        ALLOCATION: 'allocationDocUri',
-        POSSESSION: 'possessionDocUri',
-        CLEARANCE: 'clearanceDocUri',
+        ALLOTMENT: "allotmentDocUri",
+        ALLOCATION: "allocationDocUri",
+        POSSESSION: "possessionDocUri",
+        CLEARANCE: "clearanceDocUri",
       };
       const statusMap = {
-        ALLOTMENT: 'allotmentStatus',
-        ALLOCATION: 'allocationStatus',
-        POSSESSION: 'possessionStatus',
-        CLEARANCE: 'clearanceStatus',
+        ALLOTMENT: "allotmentStatus",
+        ALLOCATION: "allocationStatus",
+        POSSESSION: "possessionStatus",
+        CLEARANCE: "clearanceStatus",
       };
       const field = keyMap[documentType];
       const statusField = statusMap[documentType];
       if (field) plotDetails[field] = uri;
-      if (statusField) plotDetails[statusField] = 'approved';
+      if (statusField) plotDetails[statusField] = "approved";
       await plotDetails.save();
     }
 
     // If 100% milestone, mark plot as sold
     if (milestone === 100) {
-      plot.status = 'sold';
+      plot.status = "sold";
       await plot.save();
     }
 
     res.json({
       success: true,
-      message: 'Document uploaded successfully',
+      message: "Document uploaded successfully",
       data: {
         documentId: milestoneDoc._id,
         documentUri: uri,
@@ -107,17 +119,13 @@ export const getPlotDocuments = async (req, res) => {
   try {
     const { plotId } = req.params;
 
-    console.log('=== GET PLOT DOCUMENTS DEBUG ===');
-    console.log('plotId from params (string):', plotId);
-    console.log('plotId type:', typeof plotId);
-
     const plot = await Plot.findById(plotId);
     if (!plot) {
-      console.log('Plot not found for plotId:', plotId);
-      return res.status(404).json({ success: false, message: 'Plot not found' });
+      console.log("Plot not found for plotId:", plotId);
+      return res
+        .status(404)
+        .json({ success: false, message: "Plot not found" });
     }
-
-    console.log('Plot found:', plot._id.toString());
 
     // Purchaser can view their own plot; SP can view theirs
     const userPurchaserId = req.user.purchaserId?.toString();
@@ -125,13 +133,16 @@ export const getPlotDocuments = async (req, res) => {
     const plotPurchaserId = plot.purchaserId?.toString();
     const plotServiceProviderId = plot.serviceProviderId?.toString();
 
-    const hasAccess = req.user.role === 'admin'
-      || userPurchaserId === plotPurchaserId
-      || userServiceProviderId === plotServiceProviderId;
+    const hasAccess =
+      req.user.role === "admin" ||
+      userPurchaserId === plotPurchaserId ||
+      userServiceProviderId === plotServiceProviderId;
 
     if (!hasAccess) {
-      console.log('Access denied for user:', req.user.role);
-      return res.status(403).json({ success: false, message: 'Not authorized to view documents for this plot' });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view documents for this plot",
+      });
     }
 
     // Convert plotId to ObjectId for proper MongoDB query
@@ -139,22 +150,19 @@ export const getPlotDocuments = async (req, res) => {
       ? new mongoose.Types.ObjectId(plotId)
       : plotId;
 
-    console.log('Querying MilestoneDocument with plotId:', plotObjectId);
-
     // Fetch ALL milestone documents for this plot
     // DO NOT filter by status - frontend needs all statuses (ready, generated, approved)
     const documents = await MilestoneDocument.find({ plotId: plotObjectId })
-      .select('documentType percentage status generatedUri approvedAt approvedBy')
+      .select(
+        "documentType percentage status generatedUri approvedAt approvedBy",
+      )
       .sort({ percentage: 1 }); // Sort by milestone percentage
 
-    console.log('Documents found:', documents.length);
-    console.log('Documents:', JSON.stringify(documents, null, 2));
-
-    const plotDetails = await PlotDetails.findOne({ plotId: plotObjectId })
-      .select('allotmentDocUri allocationDocUri possessionDocUri clearanceDocUri allotmentStatus allocationStatus possessionStatus clearanceStatus');
-
-    console.log('PlotDetails found:', plotDetails ? 'yes' : 'no');
-    console.log('=== END DEBUG ===');
+    const plotDetails = await PlotDetails.findOne({
+      plotId: plotObjectId,
+    }).select(
+      "allotmentDocUri allocationDocUri possessionDocUri clearanceDocUri allotmentStatus allocationStatus possessionStatus clearanceStatus",
+    );
 
     res.json({
       success: true,
@@ -165,7 +173,7 @@ export const getPlotDocuments = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error in getPlotDocuments:', error);
+    console.error("Error in getPlotDocuments:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -174,8 +182,11 @@ export const downloadDocument = async (req, res) => {
   try {
     const { documentId } = req.params;
 
-    const md = await MilestoneDocument.findById(documentId).populate('plotId');
-    if (!md) return res.status(404).json({ success: false, message: 'Document not found' });
+    const md = await MilestoneDocument.findById(documentId).populate("plotId");
+    if (!md)
+      return res
+        .status(404)
+        .json({ success: false, message: "Document not found" });
 
     // Check access
     const userPurchaserId = req.user.purchaserId?.toString();
@@ -183,12 +194,16 @@ export const downloadDocument = async (req, res) => {
     const plotPurchaserId = md.plotId.purchaserId?.toString();
     const plotServiceProviderId = md.plotId.serviceProviderId?.toString();
 
-    const hasAccess = req.user.role === 'admin'
-      || userPurchaserId === plotPurchaserId
-      || userServiceProviderId === plotServiceProviderId;
+    const hasAccess =
+      req.user.role === "admin" ||
+      userPurchaserId === plotPurchaserId ||
+      userServiceProviderId === plotServiceProviderId;
 
     if (!hasAccess) {
-      return res.status(403).json({ success: false, message: 'Not authorized to download this document' });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to download this document",
+      });
     }
 
     // Return document metadata and URI

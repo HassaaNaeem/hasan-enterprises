@@ -135,80 +135,10 @@ export const applyForPlot = async (req, res) => {
   }
 };
 
-// export const uploadPlotDocuments = async (req, res) => {
-//   try {
-//     const { plotId } = req.params;
-
-//     const plotDetails = await PlotDetails.findOne({ plotId });
-//     if (!plotDetails) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Plot details not found" });
-//     }
-
-//     const plot = await Plot.findById(plotId);
-//     if (plot.purchaserId?.toString() !== req.user.purchaserId?.toString()) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Not authorized to upload documents for this plot",
-//       });
-//     }
-
-//     console.log("Plot found:", plotId);
-//     console.log(
-//       "Files received:",
-//       req.files ? Object.keys(req.files) : "No files"
-//     );
-
-//     if (req.files) {
-//       if (req.files.plotMap) {
-//         plotDetails.plotMapUri = `uploads/${req.files.plotMap[0].filename}`;
-//       }
-//       if (req.files.cnicCopy) {
-//         plotDetails.purchaserCnicCopyUri = `uploads/${req.files.cnicCopy[0].filename}`;
-//       }
-//       if (req.files.bankStatement) {
-//         plotDetails.purchaserBankStatementUri = `uploads/${req.files.bankStatement[0].filename}`;
-//       }
-//       if (req.files.companyForm) {
-//         plotDetails.companyFormUri = `uploads/${req.files.companyForm[0].filename}`;
-//       }
-//     }
-
-//     const allDocsUploaded =
-//       plotDetails.plotMapUri &&
-//       plotDetails.purchaserCnicCopyUri &&
-//       plotDetails.purchaserBankStatementUri &&
-//       plotDetails.companyFormUri;
-
-//     if (allDocsUploaded) {
-//       plotDetails.status = "uploaded";
-//     }
-
-//     console.log("Saving plot details:", plotDetails);
-
-//     await plotDetails.save();
-//     console.log("Plot details saved successfully");
-
-//     res.json({
-//       success: true,
-//       message: `Documents ${plotDetails.status} successfully`,
-//       data: plotDetails,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
 export const uploadPlotDocuments = async (req, res) => {
   try {
     const { plotId } = req.params;
 
-    console.log("=== REQUEST DEBUG INFO ===");
-    console.log("Content-Type:", req.headers["content-type"]);
-    console.log("req.body:", req.body);
-    console.log("req.files:", req.files);
-    console.log("req.file:", req.file);
-    console.log("========================");
     const plotDetails = await PlotDetails.findOne({ plotId });
     if (!plotDetails) {
       return res
@@ -223,12 +153,6 @@ export const uploadPlotDocuments = async (req, res) => {
         message: "Not authorized to upload documents for this plot",
       });
     }
-
-    console.log("Plot found:", plotId);
-    console.log(
-      "Files received:",
-      req.files ? Object.keys(req.files) : "No files"
-    );
 
     if (req.files) {
       if (req.files.plotMap) {
@@ -277,10 +201,10 @@ export const verifyPlotDocuments = async (req, res) => {
     const { status, serviceProviderId } = req.body;
 
     // Validate status
-    if (!['verified', 'rejected'].includes(status)) {
+    if (!["verified", "rejected"].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Status must be either "verified" or "rejected"'
+        message: 'Status must be either "verified" or "rejected"',
       });
     }
 
@@ -344,14 +268,14 @@ export const getMyPlots = async (req, res) => {
 
     const plots = await Plot.find({ purchaserId }).populate(
       "serviceProviderId",
-      "name phoneNumber"
+      "name phoneNumber",
     );
 
     const plotsWithDetails = await Promise.all(
       plots.map(async (plot) => {
         const details = await PlotDetails.findOne({ plotId: plot._id });
         return { plot, details };
-      })
+      }),
     );
 
     res.json({ success: true, count: plots.length, data: plotsWithDetails });

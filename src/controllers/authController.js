@@ -37,7 +37,7 @@ export const register = async (req, res) => {
       });
       purchaserId = purchase._id;
       token = generateToken(purchase._id);
-      console.log(token);
+
       if (!token) {
         res.status(500).json({
           success: false,
@@ -56,7 +56,6 @@ export const register = async (req, res) => {
       });
       serviceProviderId = serviceProvider._id;
       token = generateToken(serviceProvider._id);
-      console.log(token);
 
       if (!token) {
         res.status(500).json({
@@ -76,7 +75,6 @@ export const register = async (req, res) => {
       serviceProviderId: serviceProviderId || null,
     });
 
-    console.log(token);
     res.status(201).json({
       success: true,
       data: {
